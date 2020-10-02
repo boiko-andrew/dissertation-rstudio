@@ -85,7 +85,9 @@ monthlyCourseStl <- stl(monthlyCourse, s.window = "periodic")
 par(mfrow = c(1,1))
 plot(monthlyCourseStl)
 
-
+plot(monthlyCourseStl$time.series[ , "trend"])
+plot(monthlyCourseStl$time.series[ , "seasonal"])
+plot(monthlyCourseStl$time.series[ , "remainder"])
 
 
 

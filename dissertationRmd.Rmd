@@ -1,0 +1,81 @@
+---
+title: "dissertation"
+author: "Boiko Andrew"
+date: '11 февраля 2020 г '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Remove all variables beforehand
+```{r}
+rm(list = ls())
+```
+
+Attach necessary packages
+```{r, echo = FALSE}
+library(rJava)
+library(xlsx)
+library(xts)
+library(forecast)
+library(dplyr)
+library(rprojroot)
+```
+
+Set up working directory
+```{r setup, include = FALSE, cache = FALSE}
+knitr::opts_knit$set(root.dir =
+                       "D:/Мои проекты/Диссертация/R Studio") # дома
+#knitr::opts_knit$set(root.dir =
+#                       "N:/Мои проекты/Диссертация/R Studio") # на работе
+```
+
+Read exchange rate from MS Excel file
+```{r, echo = FALSE}
+fileName <- "RC_F01_01_2009_T09_02_2021.xlsx"
+dailyCourse <- read.xlsx(file = fileName, sheetName = "RC",
+                         encoding = "UTF-8")
+head(dailyCourse)
+```
+
+Rename necessary columns and look at head data
+```{r}
+colnames(dailyCourse)[colnames(dailyCourse) == "data"] <- "date"
+colnames(dailyCourse)[colnames(dailyCourse) == "curs"] <- "rate"
+
+dailyCourse$nominal <- NULL
+dailyCourse$cdx <- NULL
+
+head(dailyCourse)
+```
+
+Look at tail data
+```{r}
+tail(dailyCourse)
+```
+
+Calculate daily сourse and plot it
+```{r}
+dailyCourseXts <- xts(x = dailyCourse$rate,
+                      order.by = dailyCourse$date)
+plot(dailyCourseXts, main = "Daily course")
+```
+
+Monthly course (mean value calculated over days)
+```{r}
+monthlyCourseXts <- apply.monthly(dailyCourseXts, mean)
+index(monthlyCourseXts) <- as.yearmon(index(monthlyCourseXts))
+plot(monthlyCourseXts, main = "Monthly course")
+```
+
+Convert Xts object to time series object and plot it
+```{r}
+monthlyCourse <- ts(monthlyCourseXts, frequency = 12,
+                    start = index(monthlyCourseXts)[1])
+monthlyCourse <- monthlyCourse[ ,1]
+plot(monthlyCourse, main = "Monthly course",
+     xlab = "Years", ylab = "Course")
+grid()
+```

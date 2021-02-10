@@ -26,10 +26,10 @@ library(rprojroot)
 
 Set up working directory
 ```{r setup, include = FALSE, cache = FALSE}
-knitr::opts_knit$set(root.dir =
-                       "D:/Мои проекты/Диссертация/R Studio") # дома
 #knitr::opts_knit$set(root.dir =
-#                       "N:/Мои проекты/Диссертация/R Studio") # на работе
+#                       "D:/Мои проекты/Диссертация/R Studio") # дома
+knitr::opts_knit$set(root.dir =
+                       "N:/Мои проекты/Диссертация/R Studio") # на работе
 ```
 
 Read exchange rate from MS Excel file
@@ -79,3 +79,18 @@ plot(monthlyCourse, main = "Monthly course",
      xlab = "Years", ylab = "Course")
 grid()
 ```
+
+Make some auxilary calculations
+```{r}
+monthsQty <- as.integer(length(monthlyCourse))
+yearsQty <- floor(length(monthlyCourse) / 12)
+errorsQty <- 7 # ME, RMSE, MAE, MPE, MAPE, MASE, ACF1
+```
+
+Seasonal decomposition
+Calculate number of differencings to convert time series into
+stationary series in terms of seasonality
+```{r}
+nsdiffs(monthlyCourse)
+```
+

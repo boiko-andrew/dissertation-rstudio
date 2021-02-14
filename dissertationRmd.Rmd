@@ -1,16 +1,33 @@
 ---
 title: "dissertation"
 author: "Boiko Andrew"
-date: '11 февраля 2020 г '
-output: html_document
+date: '11 February 2021'
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    latex_engine: xelatex
+keep_markdown: yes
+keep_tex: yes
+header-includes:
+- \XeTeXdefaultencoding utf8
+- \usepackage{xltxtra}
+- \usepackage{fontspec}
+- \setmainfont{Times New Roman}
+- \setsansfont{Arial}
+- \setmonofont{Courier New}
+- \newfontfamily{\cyrillicfont}{Times New Roman}
+- \newfontfamily{\cyrillicfonttt}{Courier New}
+- \newfontfamily{\cyrillicfontsf}{Arial}
+- \usepackage[english]{babel}
 ---
 
-```{r setup, include=FALSE}
+```{r knitr set, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Remove all variables beforehand
-```{r}
+```{r removing variables}
 rm(list = ls())
 ```
 
@@ -26,10 +43,10 @@ library(rprojroot)
 
 Set up working directory
 ```{r setup, include = FALSE, cache = FALSE}
-#knitr::opts_knit$set(root.dir =
-#                       "D:/Мои проекты/Диссертация/R Studio") # дома
 knitr::opts_knit$set(root.dir =
-                       "N:/Мои проекты/Диссертация/R Studio") # на работе
+                       "D:/Мои проекты/Диссертация/R Studio") # дома
+#knitr::opts_knit$set(root.dir =
+#                       "N:/Мои проекты/Диссертация/R Studio") # на работе
 ```
 
 Read exchange rate from MS Excel file
@@ -93,4 +110,47 @@ stationary series in terms of seasonality
 ```{r}
 nsdiffs(monthlyCourse)
 ```
+
+Calculate number of ordinal differencings to convert time series into
+stationary series in term of mean and variance
+```{r}
+ndiffs(monthlyCourse)
+```
+
+Plot the graph of time series over years
+```{r seasonal plot}
+seasonplot(monthlyCourse, 12, col = rainbow(12), year.labels = TRUE,
+           main = "Seasonal plot")
+grid()
+```
+
+Seasonal decomposition itself
+```{r seasonal decomposition}
+monthlyCourseStl <- stl(monthlyCourse, s.window = "periodic")
+par(mfrow = c(1,1))
+plot(monthlyCourseStl)
+grid()
+```
+
+```{r trend plot}
+plot(monthlyCourseStl$time.series[ , "trend"],
+     xlab = "Years", ylab = "Stl trend component")
+grid()
+
+```
+
+```{r seasonal component plot}
+plot(monthlyCourseStl$time.series[ , "seasonal"],
+     xlab = "Years", ylab = "Stl seasonal component")
+grid()
+```
+``` {r remainder plot}
+plot(monthlyCourseStl$time.series[ , "remainder"],
+     xlab = "Years", ylab = "Stl remainder")
+grid()
+```
+
+# Arima
+
+
 

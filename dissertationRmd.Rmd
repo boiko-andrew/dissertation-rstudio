@@ -22,7 +22,7 @@ header-includes:
 - \usepackage[english]{babel}
 ---
 
-```{r knitr set, include=FALSE}
+```{r knitr set, include = FALSE, eval = TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -32,7 +32,7 @@ rm(list = ls())
 ```
 
 Attach necessary packages
-```{r, echo = FALSE}
+```{r attaching packages, echo = FALSE, message = FALSE}
 library(rJava)
 library(xlsx)
 library(xts)
@@ -43,10 +43,10 @@ library(rprojroot)
 
 Set up working directory
 ```{r setup, include = FALSE, cache = FALSE}
-knitr::opts_knit$set(root.dir =
-                       "D:/Мои проекты/Диссертация/R Studio") # дома
 #knitr::opts_knit$set(root.dir =
-#                       "N:/Мои проекты/Диссертация/R Studio") # на работе
+#                       "D:/Мои проекты/Диссертация/R Studio") # дома
+knitr::opts_knit$set(root.dir =
+                       "N:/Мои проекты/Диссертация/R Studio") # на работе
 ```
 
 Read exchange rate from MS Excel file
@@ -58,7 +58,7 @@ head(dailyCourse)
 ```
 
 Rename necessary columns and look at head data
-```{r}
+```{r, echo = TRUE}
 colnames(dailyCourse)[colnames(dailyCourse) == "data"] <- "date"
 colnames(dailyCourse)[colnames(dailyCourse) == "curs"] <- "rate"
 
@@ -104,7 +104,7 @@ yearsQty <- floor(length(monthlyCourse) / 12)
 errorsQty <- 7 # ME, RMSE, MAE, MPE, MAPE, MASE, ACF1
 ```
 
-Seasonal decomposition
+# STL decomposition
 Calculate number of differencings to convert time series into
 stationary series in terms of seasonality
 ```{r}

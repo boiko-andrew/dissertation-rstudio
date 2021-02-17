@@ -22,7 +22,7 @@ header-includes:
 - \usepackage[english]{babel}
 ---
 
-```{r knitr set, include = FALSE, eval = TRUE}
+```{r set, include = FALSE, eval = TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -43,10 +43,10 @@ library(rprojroot)
 
 Set up working directory
 ```{r setup, include = FALSE, cache = FALSE}
-#knitr::opts_knit$set(root.dir =
-#                       "D:/Мои проекты/Диссертация/R Studio") # дома
 knitr::opts_knit$set(root.dir =
-                       "N:/Мои проекты/Диссертация/R Studio") # на работе
+                       "D:/Мои проекты/Диссертация/R Studio") # дома
+#knitr::opts_knit$set(root.dir =
+#                       "N:/Мои проекты/Диссертация/R Studio") # на работе
 ```
 
 Read exchange rate from MS Excel file
@@ -151,6 +151,57 @@ grid()
 ```
 
 # Arima
+```{r}
+windowWidth = 12  # window width is 12 months (1 year)
 
+coefs <- c(0,0,0,0)
+for (i in 1:(monthsQty - windowWidth + 1)){
+  subsetCourse <- subset(monthlyCourse, start = i,
+                         end = (i + windowWidth - 1))
+  arimaCourse <- auto.arima(subsetCourse)
+  arimaCoefs <- arimaorder(arimaCourse)
+  names(arimaCoefs) <- NULL
+  arimaCoefs <- c(i, arimaCoefs)
+  
+  if (i == 1){
+    coefs <- arimaCoefs
+  }
+  else{
+    coefs <- rbind(coefs, arimaCoefs)
+  }
+}
 
+rownames(coefs) <- NULL
+coefs <- as.data.frame(coefs)
+
+names(coefs) <- c("n", "p", "d", "q")
+
+coefs$sum <- coefs$p + coefs$d + coefs$q
+
+```
+
+```{r}
+head(coefs)
+```
+```{r d order plot}
+plot(coefs$n, coefs$d, type = "h", main = "Arima d order plot",
+     xlab = "Month", ylab = "d order")
+grid()
+```
+```{r p order plot}
+plot(coefs$n, coefs$p, type = "h", main = "Arima p order plot",
+     xlab = "Month", ylab = "p order")
+grid()
+```
+```{r q order plot}
+plot(coefs$n, coefs$q, type = "h", main = "Arima q order plot",
+     xlab = "Month", ylab = "p order")
+grid()
+```
+
+``` {r total order plot}
+plot(coefs$n, coefs$sum, type = "h", main = "Arima total order plot",
+     xlab = "Month", ylab = "Total order")
+grid()
+```
 

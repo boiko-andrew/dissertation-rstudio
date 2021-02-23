@@ -39,6 +39,7 @@ library(xts)
 library(forecast)
 library(dplyr)
 library(rprojroot)
+library(ggplot2)
 ```
 
 Set up working directory
@@ -154,10 +155,12 @@ grid()
 ```{r}
 windowWidth = 12  # window width is 12 months (1 year)
 
-coefs <- c(0,0,0,0)
+coefs <- c(0,0,0,0,0)
 for (i in 1:(monthsQty - windowWidth + 1)){
   subsetCourse <- subset(monthlyCourse, start = i,
                          end = (i + windowWidth - 1))
+  varCoef <- 
+  
   arimaCourse <- auto.arima(subsetCourse)
   arimaCoefs <- arimaorder(arimaCourse)
   names(arimaCoefs) <- NULL
@@ -176,11 +179,11 @@ coefs <- as.data.frame(coefs)
 
 names(coefs) <- c("n", "p", "d", "q")
 
+coefs$pq <- coefs$p + coefs$q
 coefs$sum <- coefs$p + coefs$d + coefs$q
-
 ```
 
-```{r}
+```{r dataframe first rows}
 head(coefs)
 ```
 ```{r d order plot}
@@ -199,9 +202,47 @@ plot(coefs$n, coefs$q, type = "h", main = "Arima q order plot",
 grid()
 ```
 
+
+```{r p plus q order plot}
+plot(coefs$n, coefs$pq, type = "h", main = "Arima p plus q order plot",
+     xlab = "Month", ylab = "p plus q order")
+grid()
+```
+
 ``` {r total order plot}
 plot(coefs$n, coefs$sum, type = "h", main = "Arima total order plot",
      xlab = "Month", ylab = "Total order")
 grid()
 ```
+```{r q vs. p plot (not jittered)}
+plot(coefs$p, coefs$q, type = "p", main = "Arima q vs. p plot (not jittered)",
+     xlab = "p order", ylab = "q order")
+grid()
+```
+```{r q vs. p plot (jittered)}
+(p1 = ggplot(coefs, aes(x = p, y = q)) +
+               geom_point(aes(fill = as.factor(d)), size = 3,
+                          shape = 21, colour = "grey20",
+             position = position_jitter(width = 0.2, height = 0.2)))
+```
+```{r count total rows of coefs dataframe}
+coefs %>%
+  summarise(count = n())
+```
+```{r count different combinations of p, d and q}
+coefs %>%
+  group_by(p, d, q) %>%
+  summarise(count = n()) %>%
+  arrange(., desc(count))
+```
+
+
+
+
+
+
+
+
+
+
 

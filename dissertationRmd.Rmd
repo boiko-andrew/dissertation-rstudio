@@ -1,14 +1,15 @@
 ---
 title: "dissertation"
 author: "Boiko Andrew"
-date: '11 February 2021'
+date: "11 February 2021"
 output:
-  html_document:
-    df_print: paged
   pdf_document:
     latex_engine: xelatex
-keep_markdown: yes
+  word_document: default
+  html_document:
+    df_print: paged
 keep_tex: yes
+keep_markdown: yes
 header-includes:
 - \XeTeXdefaultencoding utf8
 - \usepackage{xltxtra}
@@ -22,8 +23,8 @@ header-includes:
 - \usepackage[english]{babel}
 ---
 
-```{r set, include = FALSE, eval = TRUE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, eval = TRUE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
 ```
 
 Remove all variables beforehand
@@ -43,19 +44,22 @@ library(ggplot2)
 ```
 
 Set up working directory
-```{r setup, include = FALSE, cache = FALSE}
-knitr::opts_knit$set(root.dir =
-                       "D:/Мои проекты/Диссертация/R Studio") # дома
+```{r determine directory, include = FALSE, cache = FALSE}
 #knitr::opts_knit$set(root.dir =
-#                       "N:/Мои проекты/Диссертация/R Studio") # на работе
+#                       "D:/Мои проекты/Диссертация/R Studio") # дома
+knitr::opts_knit$set(root.dir =
+                       "H:/Разное/Мои проекты/Диссертация/R Studio/") # на работе
 ```
 
 Read exchange rate from MS Excel file
-```{r, echo = FALSE}
+```{r echo = TRUE, eval = TRUE}
 fileName <- "RC_F01_01_2009_T09_02_2021.xlsx"
 dailyCourse <- read.xlsx(file = fileName, sheetName = "RC",
                          encoding = "UTF-8")
-head(dailyCourse)
+```
+
+```{r, eval=TRUE}
+head(as.matrix(dailyCourse))
 ```
 
 Rename necessary columns and look at head data
@@ -65,13 +69,6 @@ colnames(dailyCourse)[colnames(dailyCourse) == "curs"] <- "rate"
 
 dailyCourse$nominal <- NULL
 dailyCourse$cdx <- NULL
-
-head(dailyCourse)
-```
-
-Look at tail data
-```{r}
-tail(dailyCourse)
 ```
 
 Calculate daily сourse and plot it
@@ -186,6 +183,7 @@ coefs$sum <- coefs$p + coefs$d + coefs$q
 ```{r dataframe first rows}
 head(coefs)
 ```
+
 ```{r d order plot}
 plot(coefs$n, coefs$d, type = "h", main = "Arima d order plot",
      xlab = "Month", ylab = "d order")
@@ -201,7 +199,6 @@ plot(coefs$n, coefs$q, type = "h", main = "Arima q order plot",
      xlab = "Month", ylab = "p order")
 grid()
 ```
-
 
 ```{r p plus q order plot}
 plot(coefs$n, coefs$pq, type = "h", main = "Arima p plus q order plot",
@@ -219,6 +216,7 @@ plot(coefs$p, coefs$q, type = "p", main = "Arima q vs. p plot (not jittered)",
      xlab = "p order", ylab = "q order")
 grid()
 ```
+
 ```{r q vs. p plot (jittered)}
 (p1 = ggplot(coefs, aes(x = p, y = q)) +
                geom_point(aes(fill = as.factor(d)), size = 3,
@@ -226,14 +224,14 @@ grid()
              position = position_jitter(width = 0.2, height = 0.2)))
 ```
 ```{r count total rows of coefs dataframe}
-coefs %>%
-  summarise(count = n())
+as.matrix(coefs %>%
+  summarise(count = n()))
 ```
 ```{r count different combinations of p, d and q}
-coefs %>%
+as.matrix(coefs %>%
   group_by(p, d, q) %>%
   summarise(count = n()) %>%
-  arrange(., desc(count))
+  arrange(., desc(count)))
 ```
 
 

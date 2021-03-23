@@ -44,7 +44,7 @@ library(ggplot2)
 ```
 
 Set up working directory
-```{r determine directory, include = FALSE, cache = FALSE}
+```{r determining directory, include = FALSE, cache = FALSE}
 #knitr::opts_knit$set(root.dir =
 #                       "D:/Мои проекты/Диссертация/R Studio") # дома
 knitr::opts_knit$set(root.dir =
@@ -52,18 +52,18 @@ knitr::opts_knit$set(root.dir =
 ```
 
 Read exchange rate from MS Excel file
-```{r echo = TRUE, eval = TRUE}
+```{r reading exchange rate, echo = TRUE, eval = TRUE}
 fileName <- "RC_F01_01_2009_T09_02_2021.xlsx"
 dailyCourse <- read.xlsx(file = fileName, sheetName = "RC",
                          encoding = "UTF-8")
 ```
 
-```{r, eval=TRUE}
+```{r looking at the head of data, eval=TRUE}
 head(as.matrix(dailyCourse))
 ```
 
 Rename necessary columns and look at head data
-```{r, echo = TRUE}
+```{r renaming columns, echo = TRUE}
 colnames(dailyCourse)[colnames(dailyCourse) == "data"] <- "date"
 colnames(dailyCourse)[colnames(dailyCourse) == "curs"] <- "rate"
 
@@ -72,46 +72,47 @@ dailyCourse$cdx <- NULL
 ```
 
 Calculate daily сourse and plot it
-```{r}
+```{r calculating daily course}
 dailyCourseXts <- xts(x = dailyCourse$rate,
                       order.by = dailyCourse$date)
 plot(dailyCourseXts, main = "Daily course")
 ```
 
 Monthly course (mean value calculated over days)
-```{r}
+```{r calculating monthly course}
 monthlyCourseXts <- apply.monthly(dailyCourseXts, mean)
 index(monthlyCourseXts) <- as.yearmon(index(monthlyCourseXts))
 plot(monthlyCourseXts, main = "Monthly course")
 ```
 
 Convert Xts object to time series object and plot it
-```{r}
+```{r converting Xts object to time series object}
 monthlyCourse <- ts(monthlyCourseXts, frequency = 12,
                     start = index(monthlyCourseXts)[1])
 monthlyCourse <- monthlyCourse[ ,1]
 plot(monthlyCourse, main = "Monthly course",
      xlab = "Years", ylab = "Course")
-grid()
+grid(col = "red")
 ```
 
 Make some auxilary calculations
-```{r}
+```{r auxilary calculations}
 monthsQty <- as.integer(length(monthlyCourse))
 yearsQty <- floor(length(monthlyCourse) / 12)
 errorsQty <- 7 # ME, RMSE, MAE, MPE, MAPE, MASE, ACF1
+startYear <-  as.integer(format(start(monthlyCourseXts), "%Y"))
 ```
 
 # STL decomposition
 Calculate number of differencings to convert time series into
 stationary series in terms of seasonality
-```{r}
+```{r number of seasonal differencings}
 nsdiffs(monthlyCourse)
 ```
 
 Calculate number of ordinal differencings to convert time series into
 stationary series in term of mean and variance
-```{r}
+```{r number of ordinal differencings}
 ndiffs(monthlyCourse)
 ```
 
@@ -119,7 +120,7 @@ Plot the graph of time series over years
 ```{r seasonal plot}
 seasonplot(monthlyCourse, 12, col = rainbow(12), year.labels = TRUE,
            main = "Seasonal plot")
-grid()
+grid(col = "black")
 ```
 
 Seasonal decomposition itself
@@ -127,25 +128,25 @@ Seasonal decomposition itself
 monthlyCourseStl <- stl(monthlyCourse, s.window = "periodic")
 par(mfrow = c(1,1))
 plot(monthlyCourseStl)
-grid()
+grid(col = "red")
 ```
 
 ```{r trend plot}
 plot(monthlyCourseStl$time.series[ , "trend"],
      xlab = "Years", ylab = "Stl trend component")
-grid()
+grid(col = "red")
 
 ```
 
 ```{r seasonal component plot}
 plot(monthlyCourseStl$time.series[ , "seasonal"],
      xlab = "Years", ylab = "Stl seasonal component")
-grid()
+grid(col = "red")
 ```
 ``` {r remainder plot}
 plot(monthlyCourseStl$time.series[ , "remainder"],
      xlab = "Years", ylab = "Stl remainder")
-grid()
+grid(col = "red")
 ```
 
 # Arima
@@ -153,68 +154,81 @@ grid()
 windowWidth = 12  # window width is 12 months (1 year)
 
 coefs <- c(0,0,0,0,0)
+arimaForecast <- c(0)
 for (i in 1:(monthsQty - windowWidth + 1)){
   subsetCourse <- subset(monthlyCourse, start = i,
                          end = (i + windowWidth - 1))
-  varCoef <- 
+  varCoef <- sd(subsetCourse) / mean(subsetCourse)
   
-  arimaCourse <- auto.arima(subsetCourse)
-  arimaCoefs <- arimaorder(arimaCourse)
+  arimaModel <- auto.arima(subsetCourse)
+  arimaCoefs <- arimaorder(arimaModel)
+
+  arimaPred <- forecast(arimaModel)$mean[1]
+  
   names(arimaCoefs) <- NULL
-  arimaCoefs <- c(i, arimaCoefs)
-  
+  arimaCoefs <- c(i, arimaCoefs, varCoef)
+
   if (i == 1){
     coefs <- arimaCoefs
+    arimaForecast <- arimaPred
   }
   else{
     coefs <- rbind(coefs, arimaCoefs)
+    arimaForecast <- rbind(arimaForecast, arimaPred)
   }
 }
 
 rownames(coefs) <- NULL
 coefs <- as.data.frame(coefs)
 
-names(coefs) <- c("n", "p", "d", "q")
+names(coefs) <- c("n", "p", "d", "q", "varCoef")
 
 coefs$pq <- coefs$p + coefs$q
 coefs$sum <- coefs$p + coefs$d + coefs$q
+
+varCoef <- coefs$varCoef
+coefs$varCoef <- NULL
+coefs$varCoef <- varCoef
+
+rownames(arimaForecast) <- NULL
+arimaForecast <- as.vector(arimaForecast)
 ```
 
 ```{r dataframe first rows}
-head(coefs)
+head(as.matrix(coefs))
 ```
 
 ```{r d order plot}
 plot(coefs$n, coefs$d, type = "h", main = "Arima d order plot",
      xlab = "Month", ylab = "d order")
-grid()
+grid(col = "red")
 ```
 ```{r p order plot}
 plot(coefs$n, coefs$p, type = "h", main = "Arima p order plot",
      xlab = "Month", ylab = "p order")
-grid()
+grid(col = "red")
 ```
 ```{r q order plot}
 plot(coefs$n, coefs$q, type = "h", main = "Arima q order plot",
      xlab = "Month", ylab = "p order")
-grid()
+grid(col = "red")
 ```
 
 ```{r p plus q order plot}
 plot(coefs$n, coefs$pq, type = "h", main = "Arima p plus q order plot",
      xlab = "Month", ylab = "p plus q order")
-grid()
+grid(col = "red")
 ```
 
 ``` {r total order plot}
 plot(coefs$n, coefs$sum, type = "h", main = "Arima total order plot",
-     xlab = "Month", ylab = "Total order")
-grid()
+     xlab = "Month", ylab = "Arima total order")
+grid(col = "red")
 ```
 ```{r q vs. p plot (not jittered)}
 plot(coefs$p, coefs$q, type = "p", main = "Arima q vs. p plot (not jittered)",
      xlab = "p order", ylab = "q order")
-grid()
+grid(col = "red")
 ```
 
 ```{r q vs. p plot (jittered)}
@@ -234,12 +248,56 @@ as.matrix(coefs %>%
   arrange(., desc(count)))
 ```
 
+```{r plot monthly course along with coefficient of variation}
+monthlyCourseCropped <- window(monthlyCourse,
+                               start = c(startYear, windowWidth))
+monthlyVarCoef <- ts(coefs$varCoef, start = c(startYear, windowWidth),
+                     frequency = 12)
 
+par(mfrow = c(2,1))
 
+plot(monthlyCourseCropped, main = "Monthly course",
+     xlab = "Years", ylab = "Course")
+grid(col = "red")
 
+plot(monthlyVarCoef, main = "Coefficient of variation",
+     xlab = "Years", ylab = "q order")
+grid(col = "red")
+```
+```{r plot monthly course along with coefficient of variation and sum of Arima coefficients}
 
+monthlyCoefsSum <- ts(coefs$sum, start = c(startYear, windowWidth),
+                      frequency = 12)
 
+par(mfrow = c(3,1))
 
+plot(monthlyCourseCropped, main = "Monthly course",
+     xlab = "Years", ylab = "Course")
+grid(col = "red")
+
+plot(monthlyVarCoef, main = "Coefficient of variation",
+     xlab = "Years", ylab = "q order")
+grid(col = "red")
+
+plot(monthlyCoefsSum, main = "Arima total order plot",
+     xlab = "Years", ylab = "Arima total order")
+grid(col = "red")
+```
+
+```{r plot the forecast itself}
+plot(arimaForecast, type = "l", col = "red",
+     main = "Arima forecast",
+     xlab = "Years", ylab = "Exchange rate")
+grid(col = "black")
+```
+```{r transform Arima forecast to timeseries object}
+arimaForecast <- ts(arimaForecast, start = c(startYear, windowWidth),
+                      frequency = 12)
+```
+
+```{r calculate accuracy}
+accuracy(arimaForecast, monthlyCourseCropped)
+```
 
 
 
